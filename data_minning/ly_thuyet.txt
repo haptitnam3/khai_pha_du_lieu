@@ -1,0 +1,55 @@
+Khai thác các mẫu thường xuyên từu một tập giao dịch có dạng TID-itemset, trong đó TID là mã giao dịch và tập mục là tập các 
+mặt hàng được mua trong giao dịch đó
+- TID-itemset : định dạng dữ liệu ngang
+- itemset - TID : định dạng dữ liệu dọc
+* Thuật toán fp frowth khai thác tập mục thường xuyên sử dụng cây fp bằng cách phát triển từng mảnh mẫu
+
+Đầu vào:
+    D: cơ sở dữ liệu giao dịch
+    min_sup : ngưỡng hỗ trợ tối thiểu ( số lượng)
+Đầu ra: tập đầy đủ các mẫu thường xuyên
+
+Phương pháp:
+1. Cây FP được xây dựng như sau:
+    (a) Quét toàn bộ cơ sở dữ liệu D một lần. Thu thập F – tập các mục thường xuyên và số lần xuất hiện của chúng. 
+    Sắp xếp F theo thứ tự giảm dần của số lần xuất hiện để tạo danh sách L.
+
+    (b) Tạo nút gốc của cây FP, gán nhãn là "null". Với mỗi giao dịch Trans trong D, thực hiện:
+
+        - Lọc và sắp xếp các mục thường xuyên trong Trans theo thứ tự trong L.
+
+        - Gọi danh sách mục đã sắp xếp là [p | P], trong đó p là mục đầu tiên, P là phần còn lại.
+
+        - Gọi hàm insert_tree([p|P], T) như sau: nếu T có con N sao cho N.item-name = p.item-name thì tăng đếm của N lên 1; 
+        ngược lại tạo nút mới N với đếm = 1, liên kết cha là T, liên kết node-link đến các nút cùng item-name. 
+        Nếu P không rỗng, gọi đệ quy insert_tree(P, N).
+
+2. Khai thác cây fp bằng cách gọi FP_growth(FP_tree,null):
+procedure FP_growth(Tree, α)
+  (1) Nếu Tree chứa một đường duy nhất P thì
+  (2) Với mỗi tổ hợp β các nút trong P
+  (3) Sinh mẫu β ∪ α với số đếm hỗ trợ = min(số đếm các nút trong β)
+  (4) Ngược lại, với mỗi ai trong header của Tree {
+      (5) Sinh mẫu β = ai ∪ α với số đếm = ai.support_count;
+      (6) Xây dựng cơ sở mẫu điều kiện của β, sau đó tạo cây FP điều kiện Tree_β;
+      (7) Nếu Tree_β ≠ ∅ thì
+      (8) Gọi đệ quy FP_growth(Tree_β, β);
+    }
+
+
+
+
+- Số lần xuất hiện ( hỗ trợ) của một tập mục chính là độ dài của tập TID của nó
+
+KỸ THUẬT GIẢM CHI PHÍ : DIFSET
+Chỉ lưu các khác biệt giữa tập TID của tập mục (k+1) và tập mục k tương ứng
+Ví dụ:
+    {I1} = {T100, T400, T500, T700, T800, T900}
+    {I1, I2} = {T100, T400, T800, T900}
+→ diffset({I1, I2}, {I1}) = {T500, T700}
+
+Lựa chọn minsup:
+Số giao dịch	minsup đề xuất
+100	            10% – 30%
+10.000	        1% – 5%
+1.000.000	    0.01% – 1%
