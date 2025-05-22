@@ -218,7 +218,7 @@ def main():
     pause("Bước 5: Vẽ cây FP-Tree (hiển thị bằng thư viện networkx)")
     draw_fp_tree_networkx(fp_tree.root)
     print("🖼️ Cây FP-Tree đã được vẽ.")
-
+    
     # Bước 6: Áp dụng FP-Growth
     pause("Bước 6: Áp dụng thuật toán FP-Growth để khai thác tập mục phổ biến")
     freq_itemsets = {}
