@@ -53,14 +53,14 @@ class FPTree:
 # Đọc dữ liệu từ CSV
 # --------------------------------------------
 #Mở file CSV, mỗi dòng là 1 giao dịch → chuyển thành danh sách các mục (items)
-def read_transactions(filename: str) -> List[List[str]]:
+def read_transactions(filename):
     transactions = []
-    with open(filename, newline='', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            transaction = [item.strip() for item in row if item.strip()]
-            if transaction:
-                transactions.append(transaction)
+    with open(filename, 'r', encoding='utf-8') as f:
+        for line in f:
+            # tách theo dấu phẩy, strip từng item và loại bỏ item rỗng
+            items = [item.strip() for item in line.strip().split(',') if item.strip()]
+            if items:  # đảm bảo không thêm giao dịch rỗng
+                transactions.append(items)
     return transactions
 
 # --------------------------------------------
@@ -134,15 +134,16 @@ def fp_growth(tree: FPTree, prefix: List[str], min_support: int, freq_itemsets: 
     for item, nodes in sorted(tree.header_table.items(), key=lambda x: len(x[1])):
         new_prefix = prefix + [item]
         support = sum(node.count for node in nodes)
-        freq_itemsets[tuple(new_prefix)] = support
+        if support >= min_support:
+            freq_itemsets[tuple(new_prefix)] = support
 
-        conditional_patterns = find_prefix_paths(item, nodes)
-        if conditional_patterns:
-            item_supports = get_item_supports(conditional_patterns)
-            filtered_patterns = filter_items(conditional_patterns, min_support, item_supports)
-            conditional_tree = build_fp_tree(filtered_patterns)
-            if conditional_tree.header_table:
-                fp_growth(conditional_tree, new_prefix, min_support, freq_itemsets)
+            conditional_patterns = find_prefix_paths(item, nodes)
+            if conditional_patterns:
+                item_supports = get_item_supports(conditional_patterns)
+                filtered_patterns = filter_items(conditional_patterns, min_support, item_supports)
+                conditional_tree = build_fp_tree(filtered_patterns)
+                if conditional_tree.header_table:
+                    fp_growth(conditional_tree, new_prefix, min_support, freq_itemsets)
 
 # --------------------------------------------
 # Hàm FP-Growth đệ quy
@@ -179,15 +180,15 @@ def pause(step_desc):
         exit()
 
 def main():
-    filename = "sample.csv"
-    min_support_ratio = 0.5
+    filename = "DataSetA.csv"
+    min_support_ratio = 0.01 # phần trăm xuất hiện tối thiểu 
 
     # Bước 1: Đọc dữ liệu
     pause("Bước 1: Đọc dữ liệu từ file")
     transactions = read_transactions(filename)
     transactions = [[item.strip() for item in tran] for tran in transactions]
     total_transactions = len(transactions)
-    min_support_threshold = total_transactions * min_support_ratio  # không ép kiểu int nữa
+    min_support_threshold = total_transactions * min_support_ratio # số lần xuất hiện tối thiểu
 
     print(f"✅ Tổng số giao dịch: {total_transactions}")
     print(f"✅ Ngưỡng min_support: {min_support_threshold:.2f} ({min_support_ratio:.2f})")
@@ -218,7 +219,7 @@ def main():
     pause("Bước 5: Vẽ cây FP-Tree (hiển thị bằng thư viện networkx)")
     draw_fp_tree_networkx(fp_tree.root)
     print("🖼️ Cây FP-Tree đã được vẽ.")
-    
+
     # Bước 6: Áp dụng FP-Growth
     pause("Bước 6: Áp dụng thuật toán FP-Growth để khai thác tập mục phổ biến")
     freq_itemsets = {}
@@ -231,13 +232,14 @@ def main():
     for itemset, count in freq_itemsets.items():
         support_ratio = count / total_transactions
         result_data.append({
-            'support': support_ratio, #round(support_ratio, 2)
-            'itemsets': tuple(itemset)
-        })
+                'support': support_ratio,
+                'itemsets': list(itemset)
+            })
 
     df_result = pd.DataFrame(result_data)
     df_result.reset_index(drop=True, inplace=True)
 
+    # Thứ tự các item in ra
     print("\n🎯 Các tập mục phổ biến (min_support = {:.2f}):\n".format(min_support_ratio))
     print(df_result.to_string(index=True))
 
