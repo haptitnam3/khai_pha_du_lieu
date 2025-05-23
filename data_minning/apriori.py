@@ -5,7 +5,7 @@ import pandas as pd
 # Đọc dữ liệu
 DATASET_PATH = 'D:\KPDL\khai_pha_du_lieu\DataSetA.csv'
 MIN_SUP = 0.05   # min support
-MIN_CONF = 0.5  # min confidence
+MIN_CONF = 0.5    # min confidence
 
 def load_transactions(path):
     transactions = []
@@ -36,12 +36,20 @@ def get_frequent_itemsets(transactions, min_sup):
             support_data[item] = support
     Lk = L1
     k = 2
+    def has_infrequent_subset(candidate, Lk_prev):
+        for subset in combinations(candidate, len(candidate) - 1):
+            if frozenset(subset) not in Lk_prev:
+                return True
+        return False
     while Lk:
         itemsets.extend(Lk)
-        # Sinh ứng viên
-        candidates = set(
-            [i.union(j) for i in Lk for j in Lk if len(i.union(j)) == k]
-        )
+        # Sinh ứng viên với kiểm tra tập con phổ biến
+        candidates = set()
+        for i in Lk:
+            for j in Lk:
+                union = i.union(j)
+                if len(union) == k and not has_infrequent_subset(union, Lk):
+                    candidates.add(union)
         candidate_count = {}
         for transaction in transactions:
             t_set = set(transaction)
@@ -82,6 +90,8 @@ def main():
         {"itemset": tuple(sorted(itemset)), "support": support_data[itemset]}
         for itemset in frequent_itemsets
     ])
+    # Sắp xếp DataFrame theo support giảm dần
+    df = df.sort_values(by='support', ascending=False).reset_index(drop=True)
     print(f"\nDataFrame các tập phổ biến (frequent itemsets) với min_sup={MIN_SUP}:")
     print(df)
     rules = generate_association_rules(frequent_itemsets, support_data, MIN_CONF)
@@ -99,8 +109,14 @@ def main():
     
     print(rules_df)
     
-    query = rules_df[
-    rules_df['antecedent'].apply(lambda x: 'Sweet' in x) 
+#     query = rules_df[
+#     rules_df['antecedent'].apply(lambda x: 'Sweet' in x) 
+#     # rules_df['antecedent'].apply(lambda x: set(['Milk']).issubset(x)) &
+#     # rules_df['consequent'].apply(lambda x: 'Bread' in x)
+# ]
+#     print(query)
+    query = df[
+    df['itemset'].apply(lambda x: 'Tea Powder' in x) 
     # rules_df['antecedent'].apply(lambda x: set(['Milk']).issubset(x)) &
     # rules_df['consequent'].apply(lambda x: 'Bread' in x)
 ]
